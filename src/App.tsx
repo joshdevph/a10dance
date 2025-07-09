@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
 import { databases } from './lib/appwrite';
 import './App.css';
@@ -18,36 +19,44 @@ function App() {
   const [availableDates, setAvailableDates] = useState<string[]>([]);
 
   useEffect(() => {
-    async function fetchAttendance() {
-      try {
-        const dbId = '686db7ef003cad2f3703';
-        const collectionId = '686dbed2001341193519';
-        const response = await databases.listDocuments(dbId, collectionId);
-        const docs = response.documents as Attendance[];
+  async function fetchAttendance() {
+    try {
+      const dbId = '686db7ef003cad2f3703';
+      const collectionId = '686dbed2001341193519';
+      const response = await databases.listDocuments(dbId, collectionId);
 
-        setData(docs);
+      // Map and type check
+      const docs = (response.documents as any[])
+        .filter(doc => doc.name && doc.email && doc.date)
+        .map(doc => ({
+          $id: doc.$id,
+          name: doc.name,
+          email: doc.email,
+          date: doc.date,
+        })) as Attendance[];
 
-        // Extract unique YYYY-MM-DD dates that have a record
-        const dateSet = new Set(
-          docs
-            .filter((att) => !!att.date)
-            .map((att) => att.date.slice(0, 10))
-        );
-        const sortedDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
-        setAvailableDates(sortedDates);
+      setData(docs);
 
-        // Default to most recent date if available
-        if (sortedDates.length > 0) {
-          setSelectedDate(sortedDates[0]);
-        }
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch data');
+      // Extract unique YYYY-MM-DD dates that have a record
+      const dateSet = new Set(
+        docs.map((att) => att.date.slice(0, 10))
+      );
+      const sortedDates = Array.from(dateSet).sort((a, b) => b.localeCompare(a));
+      setAvailableDates(sortedDates);
+
+      // Default to most recent date if available
+      if (sortedDates.length > 0) {
+        setSelectedDate(sortedDates[0]);
       }
-      setLoading(false);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch data');
     }
+    setLoading(false);
+  }
 
-    fetchAttendance();
-  }, []);
+  fetchAttendance();
+}, []);
+
 
   // Only show rows matching selected date
   const filteredData = data.filter(
