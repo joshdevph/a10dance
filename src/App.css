@@ -142,3 +142,85 @@ body {
   background: #f3f6fb;
   color: #2b344d;
 }
+.floating-tabs {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 28px;
+  position: relative;
+  z-index: 10;
+}
+
+.tab {
+  background: #f6f8fc;
+  border: none;
+  outline: none;
+  padding: 10px 36px;
+  border-radius: 32px;
+  font-size: 1.07rem;
+  font-weight: 600;
+  color: #224b6a;
+  box-shadow: 0 1px 3px #224b6a10;
+  cursor: pointer;
+  transition: background 0.18s, color 0.16s, box-shadow 0.18s;
+  margin-bottom: -14px;
+  margin-top: 0;
+}
+
+.tab.active {
+  background: #224b6a;
+  color: #fff;
+  box-shadow: 0 3px 12px #224b6a18;
+}
+@media (max-width: 900px) {
+  .attendance-card {
+    width: 96vw;
+    padding: 18px 2vw 24px 2vw;
+    min-width: unset;
+  }
+}
+
+/* Responsive table: stack labels & data for extra-small screens */
+@media (max-width: 650px) {
+  .attendance-table,
+  .attendance-table thead,
+  .attendance-table tbody,
+  .attendance-table th,
+  .attendance-table td,
+  .attendance-table tr {
+    display: block;
+    width: 100%;
+  }
+
+  .attendance-table thead {
+    display: none; /* Hide header on small screens */
+  }
+
+  .attendance-table tr {
+    margin-bottom: 18px;
+    box-shadow: 0 1px 4px #224b6a11;
+    border-radius: 14px;
+    background: #fafcff;
+    padding: 8px 0;
+  }
+
+  .attendance-table td {
+    padding: 12px 18px;
+    text-align: left;
+    border-bottom: none;
+    position: relative;
+    font-size: 1rem;
+    background: none;
+    min-width: 100px;
+  }
+
+  .attendance-table td:before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #224b6a;
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.97em;
+  }
+}
