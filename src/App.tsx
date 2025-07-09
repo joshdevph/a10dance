@@ -8,6 +8,7 @@ interface Attendance {
   name: string;
   email: string;
   date: string;
+  timestamp: string;
 }
 
 function App() {
@@ -26,12 +27,13 @@ function App() {
         const response = await databases.listDocuments(dbId, collectionId);
 
         const docs = (response.documents as any[])
-          .filter(doc => doc.name && doc.email && doc.date)
+          .filter(doc => doc.name && doc.email && doc.date && doc.timestamp)
           .map(doc => ({
             $id: doc.$id,
             name: doc.name,
             email: doc.email,
             date: doc.date,
+            timestamp: doc.timestamp, // THIS LINE IS IMPORTANT
           })) as Attendance[];
 
         setData(docs);
@@ -53,7 +55,18 @@ function App() {
   const filteredData = data.filter(
     (att) => att.date?.slice(0, 10) === selectedDate
   );
-
+  function isLate(timestamp: string): boolean {
+    if (!timestamp) return false;
+    const date = new Date(timestamp);
+    const options: Intl.DateTimeFormatOptions = {
+      hour: '2-digit',
+      hour12: false,
+      timeZone: 'Asia/Manila',
+    };
+    const hourStr = date.toLocaleString('en-PH', options);
+    const hour = parseInt(hourStr, 10);
+    return hour > 8;
+  }
   return (
     <div className="attendance-root">
       <div className="attendance-card">
@@ -115,24 +128,36 @@ function App() {
                     <tr>
                       <th className="col-name">Name</th>
                       <th className="col-email">Email</th>
-                      <th className="col-date">Date/Time</th>
+                      <th className="col-date">Date</th>
+                      <th className="col-time">Time</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredData.map((att) => (
-                      <tr key={att.$id}>
+                      <tr
+                        key={att.$id}
+                        className={att.timestamp && isLate(att.timestamp) ? 'attendance-row-late' : ''}
+                      >
                         <td className="col-name" data-label="Name">{att.name}</td>
                         <td className="col-email" data-label="Email">{att.email}</td>
-                        <td className="col-date" data-label="Date/Time">
+                        <td className="col-date" data-label="Date">
                           {att.date
-                            ? new Date(att.date).toLocaleString('en-PH', {
+                            ? new Date(att.date).toLocaleDateString('en-PH', {
                                 year: 'numeric',
                                 month: 'short',
                                 day: 'numeric',
+                                timeZone: 'Asia/Manila',
+                              })
+                            : ''}
+                        </td>
+                        <td className="col-date" data-label="Time">
+                          {att.timestamp
+                            ? new Date(att.timestamp).toLocaleTimeString('en-PH', {
                                 hour: '2-digit',
                                 minute: '2-digit',
                                 second: '2-digit',
                                 hour12: true,
+                                timeZone: 'Asia/Manila',
                               })
                             : ''}
                         </td>

@@ -224,3 +224,7 @@ body {
     font-size: 0.97em;
   }
 }
+.attendance-row-late {
+  background-color: #ffe6e6 !important; /* light red background */
+}
+
