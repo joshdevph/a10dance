@@ -11,7 +11,7 @@ interface Attendance {
 }
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'attendance' | 'quiz'>('attendance');
+  const [activeTab, setActiveTab] = useState<'attendance' | 'quiz' | 'exam'>('attendance');
   const [data, setData] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +70,12 @@ function App() {
           >
             Quiz
           </button>
+          <button
+            className={activeTab === 'exam' ? 'tab active' : 'tab'}
+            onClick={() => setActiveTab('exam')}
+          >
+            Exam
+          </button>
         </div>
 
         {activeTab === 'attendance' && (
@@ -112,28 +118,27 @@ function App() {
                       <th className="col-date">Date/Time</th>
                     </tr>
                   </thead>
-                    <tbody>
-                      {filteredData.map((att) => (
-                        <tr key={att.$id}>
-                          <td className="col-name" data-label="Name">{att.name}</td>
-                          <td className="col-email" data-label="Email">{att.email}</td>
-                          <td className="col-date" data-label="Date/Time">
-                            {att.date
-                              ? new Date(att.date).toLocaleString('en-PH', {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  second: '2-digit',
-                                  hour12: true,
-                                })
-                              : ''}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-
+                  <tbody>
+                    {filteredData.map((att) => (
+                      <tr key={att.$id}>
+                        <td className="col-name" data-label="Name">{att.name}</td>
+                        <td className="col-email" data-label="Email">{att.email}</td>
+                        <td className="col-date" data-label="Date/Time">
+                          {att.date
+                            ? new Date(att.date).toLocaleString('en-PH', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                hour12: true,
+                              })
+                            : ''}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
                 </table>
               </div>
             )}
@@ -145,6 +150,15 @@ function App() {
             <h2 className="attendance-title">Quiz (Coming Soon)</h2>
             <p style={{ color: '#888', marginTop: 24 }}>
               Quiz features will be available here.
+            </p>
+          </div>
+        )}
+
+        {activeTab === 'exam' && (
+          <div style={{ padding: 40, textAlign: 'center' }}>
+            <h2 className="attendance-title">Exam (Coming Soon)</h2>
+            <p style={{ color: '#888', marginTop: 24 }}>
+              Exam features will be available here.
             </p>
           </div>
         )}
