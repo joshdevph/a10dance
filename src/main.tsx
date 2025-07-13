@@ -8,7 +8,7 @@ import Dashboard from './pages/Dashboard.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter basename='/a10dance'>
+    <BrowserRouter basename='/a10dance/'>
     <AuthProvider>
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
