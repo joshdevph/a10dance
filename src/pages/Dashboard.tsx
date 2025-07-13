@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { databases } from '../lib/appwrite';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Scanner, useDevices, outline } from '@yudiel/react-qr-scanner';
+import {QRCodeSVG} from 'qrcode.react';
 
 interface Attendance {
   $id: string;
@@ -13,32 +15,44 @@ interface Attendance {
 }
 
 function Dashboard() {
-  const [activeTab, setActiveTab] = useState<'attendance' | 'quiz' | 'exam'>('attendance');
+  const [activeTab, setActiveTab] = useState<'attendance' | 'quiz' | 'exam' | 'qrscanner' | 'myqr'>('attendance');
   const [data, setData] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
-  const navigate = useNavigate();
+  const [qrResult, setQrResult] = useState<string | null>(null);
 
+  const devices = useDevices();
+  const navigate = useNavigate();
   const { user, logout, loading: authLoading } = useAuth();
 
-  // Protect route: redirect if not logged in
+  // Admin if isAdmin true OR email match
+  const isAdmin =
+    user?.isAdmin === true || user?.email === "joshuadignadice24@gmail.com";
+  const tabs: Array<'attendance' | 'quiz' | 'exam' | 'qrscanner' | 'myqr'> = isAdmin
+    ? ['attendance', 'quiz', 'exam', 'qrscanner', 'myqr']
+    : ['myqr'];
+
+  // Ensure only My QR tab is open if not admin
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/login');
-    }
+    if (!isAdmin && activeTab !== 'myqr') setActiveTab('myqr');
+  }, [isAdmin, activeTab]);
+
+  // Auth guard
+  useEffect(() => {
+    if (!authLoading && !user) navigate('/login');
   }, [user, authLoading, navigate]);
 
+  // Fetch data for attendance tab if admin
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isAdmin) return;
     async function fetchAttendance() {
       setLoading(true);
       try {
         const dbId = '686db7ef003cad2f3703';
         const collectionId = '686dbed2001341193519';
         const response = await databases.listDocuments(dbId, collectionId);
-
         const docs = (response.documents as any[])
           .filter(doc => doc.name && doc.email && doc.date && doc.timestamp)
           .map(doc => ({
@@ -48,7 +62,6 @@ function Dashboard() {
             date: doc.date,
             timestamp: doc.timestamp,
           })) as Attendance[];
-
         setData(docs);
 
         const dateSet = new Set(docs.map((att) => att.date.slice(0, 10)));
@@ -61,7 +74,7 @@ function Dashboard() {
       setLoading(false);
     }
     fetchAttendance();
-  }, [user]);
+  }, [user, isAdmin]);
 
   const filteredData = data.filter(
     (att) => att.date?.slice(0, 10) === selectedDate
@@ -81,7 +94,6 @@ function Dashboard() {
   }
 
   if (authLoading) {
-    // Optional: show spinner or loading
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-gray-50">
         <div className="text-gray-400 text-xl">Loading…</div>
@@ -89,12 +101,12 @@ function Dashboard() {
     );
   }
 
-  if (!user) return null; // Don't render until user is checked
+  if (!user) return null;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-50 min-h-screen">
-      <div className="relative w-full max-w-5xl mx-auto bg-white border border-gray-200 rounded-2xl p-2 sm:p-6 lg:p-10 shadow hover:shadow-2xl transition-shadow flex flex-col gap-6 min-h-[70vh]">
-        {/* Logout Button */}
+      <div className="relative w-full max-w-5xl bg-white border border-gray-200 rounded-2xl p-2 sm:p-6 lg:p-10 shadow hover:shadow-2xl transition-shadow flex flex-col gap-6 min-h-[70vh]">
+        {/* Logout */}
         <button
           onClick={logout}
           className="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-md font-semibold shadow-sm hover:bg-red-600 transition"
@@ -104,7 +116,7 @@ function Dashboard() {
 
         {/* Tabs */}
         <div className="flex justify-center gap-2 mb-2 flex-wrap">
-          {['attendance', 'quiz', 'exam'].map((tab) => (
+          {tabs.map((tab) => (
             <button
               key={tab}
               className={`px-4 py-2 rounded-lg text-base font-medium transition
@@ -112,14 +124,19 @@ function Dashboard() {
                   ? 'bg-blue-600 text-white shadow'
                   : 'bg-gray-100 text-gray-600 hover:bg-blue-50'
                 }`}
-              onClick={() => setActiveTab(tab as typeof activeTab)}
+              onClick={() => setActiveTab(tab)}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === 'qrscanner'
+                ? 'QR Scanner'
+                : tab === 'myqr'
+                ? 'My QR'
+                : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
         </div>
 
-        {activeTab === 'attendance' && (
+        {/* Attendance Tab (admin only) */}
+        {activeTab === 'attendance' && isAdmin && (
           <>
             <h2 className="text-2xl font-bold text-gray-800 text-center mb-4">Attendance List</h2>
             <div className="flex justify-center mb-4">
@@ -200,17 +217,79 @@ function Dashboard() {
           </>
         )}
 
-        {activeTab === 'quiz' && (
+        {/* Quiz Tab (admin only) */}
+        {activeTab === 'quiz' && isAdmin && (
           <div className="py-16 text-center text-gray-400">
             <h2 className="text-xl font-semibold mb-2">Quiz (Coming Soon)</h2>
             <p>Quiz features will be available here.</p>
           </div>
         )}
 
-        {activeTab === 'exam' && (
+        {/* Exam Tab (admin only) */}
+        {activeTab === 'exam' && isAdmin && (
           <div className="py-16 text-center text-gray-400">
             <h2 className="text-xl font-semibold mb-2">Exam (Coming Soon)</h2>
             <p>Exam features will be available here.</p>
+          </div>
+        )}
+
+        {/* QR Scanner Tab (admin only) */}
+        {activeTab === 'qrscanner' && isAdmin && (
+          <div className="flex flex-col items-center justify-center py-8 gap-6">
+            <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">QR Code Scanner</h2>
+            {qrResult && (
+              <div className="bg-green-50 text-green-800 px-4 py-2 rounded mb-2 font-mono text-sm break-all text-center max-w-full">
+                <b>Scanned Result:</b> {qrResult}
+              </div>
+            )}
+            <div className="w-full max-w-xs rounded overflow-hidden border border-gray-200 bg-gray-50 shadow flex items-center justify-center aspect-square">
+              <Scanner
+                onScan={codes => {
+                  if (codes.length > 0 && codes[0].rawValue !== qrResult) {
+                    setQrResult(codes[0].rawValue);
+                  }
+                }}
+                onError={err => setQrResult('Scan error: ' + err)}
+                constraints={{
+                  deviceId: devices[0]?.deviceId,
+                  facingMode: 'environment'
+                }}
+                formats={['qr_code']}
+                scanDelay={800}
+                allowMultiple={false}
+                components={{ tracker: outline }}
+                styles={{ container: { width: '100%', height: '100%' } }}
+              />
+            </div>
+            <div className="text-xs text-gray-400 text-center">Allow camera access to scan QR codes.</div>
+          </div>
+        )}
+
+        {/* My QR Tab (everyone) */}
+        {activeTab === 'myqr' && (
+          <div className="flex flex-col items-center justify-center py-8 gap-4">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">My QR Code</h2>
+            <div className="bg-gray-100 p-6 rounded-xl shadow-md flex flex-col items-center">
+              <QRCodeSVG
+                value={JSON.stringify({
+                  id: user.$id,
+                  email: user.email,
+                  name: user.name,
+                })}
+                size={210}
+                bgColor="#F3F4F6"
+                fgColor="#111827"
+                level="M"
+                includeMargin={true}
+              />
+              <div className="mt-3 text-center text-gray-600">
+                <div className="font-medium">{user.name || user.email}</div>
+                <div className="text-xs text-gray-400">{user.email}</div>
+              </div>
+            </div>
+            <p className="text-sm text-gray-400 text-center mt-2">
+              Let staff scan this QR code for attendance or access.
+            </p>
           </div>
         )}
       </div>
