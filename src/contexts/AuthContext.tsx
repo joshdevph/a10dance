@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
@@ -33,13 +34,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkSession();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    setLoading(true);
-    await account.createEmailPasswordSession(email, password);
-    const user = await account.get();
-    setUser(user);
-    setLoading(false);
-  };
+const login = async (email: string, password: string) => {
+  setLoading(true);
+  try {
+    // Try to get current user/session
+    await account.get();
+    // If successful, a session exists, so delete it first
+    await account.deleteSession('current');
+  } catch (err) {
+    // No session exists, do nothing
+  }
+
+  // Now, it's safe to create a new session
+  await account.createEmailPasswordSession(email, password);
+  const user = await account.get();
+  setUser(user);
+  setLoading(false);
+};
+
 
   const logout = async () => {
     setLoading(true);

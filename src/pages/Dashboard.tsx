@@ -53,37 +53,40 @@ function Dashboard() {
   }, [user, authLoading, navigate]);
 
   // Fetch data for attendance tab if admin
-  useEffect(() => {
+  // --- moved out so it can be called after saving too ---
+  const fetchAttendance = async () => {
     if (!user || !isAdmin) return;
-    async function fetchAttendance() {
-      setLoading(true);
-      try {
-        const dbId = '686db7ef003cad2f3703';
-        const collectionId = '686dbed2001341193519';
-        const response = await databases.listDocuments(dbId, collectionId);
-        const docs = (response.documents as any[])
-          .filter(doc => doc.name && doc.email && doc.date && doc.timestamp)
-          .map(doc => ({
-            $id: doc.$id,
-            name: doc.name,
-            email: doc.email,
-            date: doc.date,
-            timestamp: doc.timestamp,
-          })) as Attendance[];
-        setData(docs);
+    setLoading(true);
+    try {
+      const dbId = '686db7ef003cad2f3703';
+      const collectionId = '686dbed2001341193519';
+      const response = await databases.listDocuments(dbId, collectionId);
+      const docs = (response.documents as any[])
+        .filter(doc => doc.name && doc.email && doc.date && doc.timestamp)
+        .map(doc => ({
+          $id: doc.$id,
+          name: doc.name,
+          email: doc.email,
+          date: doc.date,
+          timestamp: doc.timestamp,
+        })) as Attendance[];
+      setData(docs);
 
-        const dateSet = new Set(docs.map(att => att.date.slice(0, 10)));
-        const sortedDates = Array.from(dateSet).sort((a, b) =>
-          b.localeCompare(a)
-        );
-        setAvailableDates(sortedDates);
-        if (sortedDates.length > 0) setSelectedDate(sortedDates[0]);
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch data');
-      }
-      setLoading(false);
+      const dateSet = new Set(docs.map(att => att.date.slice(0, 10)));
+      const sortedDates = Array.from(dateSet).sort((a, b) =>
+        b.localeCompare(a)
+      );
+      setAvailableDates(sortedDates);
+      if (sortedDates.length > 0) setSelectedDate(sortedDates[0]);
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch data');
     }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchAttendance();
+    // eslint-disable-next-line
   }, [user, isAdmin]);
 
   // Debounce scanned users for 2 seconds per email
@@ -136,6 +139,7 @@ function Dashboard() {
         type: 'success',
         message: `Attendance recorded for ${parsed.name}`,
       });
+      await fetchAttendance(); // <--- refresh list after saving
     } catch (err: any) {
       setQrFeedback({
         type: 'error',
