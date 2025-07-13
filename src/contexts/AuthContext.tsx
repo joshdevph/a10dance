@@ -8,6 +8,8 @@ interface AuthContextProps {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<void>;
+
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -45,9 +47,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setLoading(false);
   };
-
+  const register = async (email: string, password: string, name: string) => {
+    await account.create('unique()', email, password, name);
+    await login(email, password);
+  };
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );
