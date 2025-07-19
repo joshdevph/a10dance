@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import AttendanceTab from './tabs/AttendanceTab';
 import QuizTab from './tabs/QuizTab';
 import ExamTab from './tabs/ExamTab';
-import QrScannerTab from './tabs/QRScannerTab';
+import QrScannerTab from './tabs/QrScannerTab';
 import MyQrTab from './tabs/MyQrTab';
 import { LogOut, Menu, X } from 'lucide-react'; // Added X for close icon
 
